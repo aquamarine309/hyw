@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>2026 小游戏</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      -webkit-box-sizing: border-box;
+      -moz-box-sizing: border-box;
+      box-sizing: border-box;
+    }
+    
+    body,html {
+      position: relative;
+      height: 100%;
+    }
+    
+    #app {
+      padding: 5px;
+      position: relative;
+    }
+    
+    .btn-container {
+      width: 100%;
+      position: relative;
+    }
+    
+    .big-crunch {
+      width: 180px;
+      height: 90px;
+    }
+    
+    body.refresh::after {
+      content: "刷新中…";
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      animation: fade 5s;
+      left: 0;
+      top: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+      color: white;
+      font-size: 40px;
+    }
+    
+    @keyframes fade {
+      0% {
+        background-color: #00000088;
+      }
+      
+      100% {
+        background-color: #000000ff;
+      }
+    }
+    .flower {
+     animation: rotateFlower 5s linear infinite;
+    }
+    @keyframes rotateFlower {
+     from { transform: rotate(0deg); }
+     to { transform: rotate(360deg); }
+    }
+    .flower-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    .flower-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: row;
+    }
+    .flower {
+      width: 50px;
+      height: 50px;
+      background: url("./cherry_blossom.png");
+      -webkit-background-size: cover;
+      background-size: cover;
+      margin: 0 10px;
+    }
+    
+    .red {
+      color: #f03327;
+    }
+    
+    .dk-box {
+      border: 1px solid;
+      border-radius: 5px;
+      padding: 5px;
+      height: 80px;
+      width: 100%;
+    }
+    
+    .blue {
+      color: #214CA5;
+    }
+    .note-container {
+      width: 100%;
+      height: 30px;
+      border: 1px solid;
+      position: relative;
+    }
+    .line {
+      position: absolute;
+      width: 3px;
+      height: 100%;
+      background-color: #888888;
+      top: 0;
+    }
+    .check {
+      left: 10%;
+    }
+    .key {
+      width: 60px;
+      height: 60px;
+      border-radius: 30px;
+      background-color: #cc3333;
+      border: 1px solid;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <div>
+      <p>温馨提示：这是一个非常简单的游戏！</p>
+      <p>游玩时间：{{ time }}</p>
+      <p>你拥有 {{ format(p) }} 点数</p>
+      <p>通关目标：2026 点数 ({{ (100 * p / 2026).toFixed(2) }}%)</p>
+      <p>成就: 无</p>
+      <div class="btn-container">
+        <button @click="handle" :style="styleObj">{{ btnText }}</button>
+      </div>
+      <div v-if="st">
+        <hr>
+        <h3>新生维度</h3>
+        <div>你有 {{ bt.toFixed(3) }} 个按钮碎片</div>
+        <div v-if="cdb === -1">以下有三个按钮供你选择</div>
+        <div v-if="!bc || nd">
+          <div>第一维度 ({{ dim[0].toFixed(3) }}) <button v-if="cdb === -1" @click="cb(0, 1)">1点数</button></div>
+          <div>第二维度 ({{ dim[1].toFixed(3) }}) <button v-if="cdb === -1" @click="cb(1, 2)">2点数</button></div>
+          <div>第三维度 ({{ dim[2].toFixed(3) }}) <button v-if="cdb === -1" @click="cb(2, 2025)">2025点数</button></div>
+          <button v-if="p > 0 && cdb >= 0" @click="su">加速(-1点数)</button>
+        </div>
+        <div v-else>
+          <p>你即将获得一个按钮</p>
+          <button
+            class="big-crunch"
+            @click="bigCrunch()"
+            :disabled="sc"
+          > 
+            大坍缩
+          </button>
+          <div v-if="sc && !nd" class="red">
+            "大坍缩"无响应
+            <button @click="refreshGame">
+              刷新游戏
+            </button>
+          </p>
+        </div>
+      </div>
+    </div>
+      <div v-if="nd">
+        <hr>
+        <h3>春花绽放</h3>
+        <p>找出最特别的那朵花！</p>
+        <p v-if="!timeout">倒计时：{{ flowerTime }}秒！</p>
+        <p v-else-if="!ef"><button @click="tryAgain">再来一次！</button>
+        </p>
+        <div class="flower-container" v-if="!rd2">
+          <div class="flower-row" v-for="i in 6" :key="`${i}row`">
+            <div
+              class="flower"
+              v-for="j in 4"
+              :key="`${(i - 1) * 4 + j - 1}flower`"
+              :style="rdStyle((i - 1) * 4 + j - 1)"
+              @click="cf((i - 1) * 4 + j - 1)"
+              ref="flowers"
+            > 
+            </div>
+          </div>
+        </div>
+        <button
+          v-if="timeout && !ef"
+          :disabled="p < 20"
+          @click="exploreFlower()"
+        >
+          探索花的秘密！ (-20点数)
+        </button>
+        <p v-if="ef && !rd2">每一朵花都有自己的功能，尝试利用它们获取点数吧！</p>
+      </div>
+      <div v-if="rd2">
+        <hr>
+        <h3>快刀乱麻</h3>
+        <p>现在的时间是{{ dkTime }}</p>
+        <p>加速：
+          <button @click="modifyTimeSpeed(100000)">×100000</button>
+          <button @click="modifyTimeSpeed(10000)">×10000</button>
+          <button @click="modifyTimeSpeed(1000)">×1000</button>
+          <button @click="modifyTimeSpeed(100)">×100</button>
+          <button @click="modifyTimeSpeed(10)">×10</button>
+          <button @click="modifyTimeSpeed(1)">×1</button>
+          <button @click="nextHide = !nextHide">改为第二天{{ nextHide ? "" : "不" }}显示秒数</button>
+        </p>
+        <br>
+        <div>
+          <button @click="openDK">我要打卡！</button>
+        </div>
+        <div class="dk-box">
+          <template v-if="dkShow">
+            <div>打卡能帮助人养成自律习惯、清晰记录成长轨迹，从而有效提升执行力与成就感。</div>
+            <button v-if="!cachedDK" @click="dk">打卡</button>
+            <p v-else>你今日已打卡({{ onDKTime }})</p>
+          </template>
+        </div>
+        <div
+          v-for="(dk, index) in nextDayPrepare"
+          :key="index+'dk'"
+          v-if="crt >= dk[1]"
+        >
+          <span class="blue" v-if="dk[0] >= 0">{{ frd[dk[0] ]}}</span><span v-else>你</span>{{ des(index) }}
+        </div>
+        <div>
+          <p>打卡目标：</p>
+          <p>获得打卡第一: {{ winCount }}/3</p>
+          <p>连续打卡前三: {{ continue3 }}/2</p>
+          <p>不显示秒数打卡前三: {{ hard3 }}/1</p>
+        </div>
+      </div>
+      <div v-if="th">
+        <hr>
+        <h3>乐奏新春</h3>
+        <p>跟随律动，点击按钮</p>
+        <button @click="play">准备好了</button>
+        <canvas></canvas>
+        </div>
+        <div>
+          <button class="key" style="background: #cc3333"></button>
+          <button class="key" style="background: #33cc33"></button>
+          <button class="key" style="background: #cccc33"></button>
+          <button class="key" style="background: #3333cc"></button>
+        <div>
+      </div>
+  </div>
+  <script src="main.js" type="module"></script>
+</body>
+</html>
