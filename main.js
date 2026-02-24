@@ -6,22 +6,22 @@ window.player = {
   lastUpdate: Date.now(),
   p: 0,
   e: {
-    tr: false,  // Tired疲倦
-    h: false,  // 正负异常
-    sl: false, // slient沉默
-    st: false, // 1st 第一关
-    bc: false, // big crunch 大坍缩
-    sc: false, // 无响应
-    nd: false, // 2nd 第二关
-    ef: false, // explore the flower 探索花
-    rd: false // 3rd 第三关
+    tr: false,  
+    h: false,  
+    sl: false, 
+    st: false, 
+    bc: false, 
+    sc: false, 
+    nd: false, 
+    ef: false, 
+    rd: false
   },
-  bt: 0.001, // button按钮碎片
-  cdb: -1, // chosen button选择的维度
-  dim: [0, 0, 0], // dimensions 维度
-  spd: 0.1, // speed维度的速度
-  k: 1, // Logistic上限(按钮碎片上限)
-  start: Date.now(), // 游玩起点
+  bt: 0.001,
+  cdb: -1,
+  dim: [0, 0, 0],
+  spd: 0.1, 
+  k: 1, 
+  start: Date.now(), 
   todayDK: false
 }
 
@@ -176,7 +176,7 @@ window.app = new Vue({
         this.crt -= 86400;
         if (!this.todayDK && this.continue3 < 2) this.continue3 = 0;
         this.todayDK = false;
-        this.nextDayPrepare = new Array(frd.length).fill(0).map((x, i) => [i, Math.random() < 0.9 ? (2 * Math.pow(Math.random(), 2) + 0.1 + (Math.random() < 0.4 ? 1.1 : 0)) : 86401]).sort((a, b) => a[1] - b[1]);
+        this.nextDayPrepare = new Array(frd.length).fill(0).map((x, i) => [i, Math.random() < 0.9 ? (2 * Math.pow(Math.random(), 1.2) + 0.1 + (Math.random() < 0.4 ? 1.1 : 0)) : 86401]).sort((a, b) => a[1] - b[1]);
         this.lastHide = this.hide;
         this.hide = this.nextHide;
       }
@@ -231,6 +231,7 @@ window.app = new Vue({
     su() {
       player.spd += 0.01;
       player.p--;
+      player.p = Math.max(player.p, 0);
     },
     bigCrunch() {
       this.mrs2 = Date.now();
@@ -284,7 +285,7 @@ window.app = new Vue({
         player.p--;
       }
       this.rd = Math.floor(Math.random() * 24);
-      this.m = (Math.random() > 0.5 ? 1 : -1) * (10 + 40 * Math.random()) / Math.pow(player.p + 1, 0.2);
+      this.m = (Math.random() > 0.5 ? 1 : -1) * (20 + 80 * Math.random()) / Math.pow(player.p + 1, 0.1);
     },
     tryAgain() {
       this.rd = Math.floor(Math.random() * 24);
@@ -317,7 +318,7 @@ window.app = new Vue({
         setTimeout(() => {
           this.dkShow = true;
           this.cachedDK = this.todayDK;
-        }, Math.random() * 1000 + 500);
+        }, Math.random() * 500 + 100);
       } else {
         this.dkShow = false;
       }
@@ -376,7 +377,7 @@ function updateResource(diff) {
     for (let i = player.cdb; i > 0; i--) {
       player.dim[i - 1] += player.dim[i] * player.spd * (diff / 1000);
     }
-    // Logistic函数
+    
     player.bt += Math.log(player.dim[0] * player.spd * 10 + 1) / 1000 * (player.bt) * (player.k - player.bt) / player.k;
   }
 }
@@ -393,3 +394,5 @@ function gameLoop() {
 window.onload = function() {
   setInterval(() => gameLoop(), 33);
 }
+
+
